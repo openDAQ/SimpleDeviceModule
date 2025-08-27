@@ -172,7 +172,7 @@ TEST_F(ExampleModuleTest, GetValueSignals)
 
     for (const auto& signal : signals)
     {
-        auto id = signal.getName();
+        auto id = signal.getGlobalId();
 
         DataDescriptorPtr signalDescriptor;
         ASSERT_NO_THROW(signalDescriptor = signal.getDescriptor())
@@ -218,11 +218,11 @@ TEST_F(ExampleModuleTest, GetDomainSignal)
     {
         SignalPtr domainSignal;
         ASSERT_NO_THROW(domainSignal = signal.getDomainSignal())
-            << signal.getName() << " get domain signal must not throw";
+            << signal.getGlobalId()<< " get domain signal must not throw";
         ASSERT_NO_THROW(domainSignal.assigned())
-            << signal.getName() << " domain signal is not assigned";
+            << signal.getGlobalId() << " domain signal is not assigned";
 
-        auto id = domainSignal.getName();
+        auto id = domainSignal.getGlobalId();
 
         DataDescriptorPtr domainDescriptor;
         ASSERT_NO_THROW(domainDescriptor = domainSignal.getDescriptor()) 
@@ -292,6 +292,6 @@ TEST_F(ExampleModuleTest, StreamReader)
         auto reader = StreamReader<double>(signal);
         auto capacity = sizeof(buffer) / sizeof(double);
         reader.read(buffer, &capacity, std::chrono::milliseconds(1s).count());
-        EXPECT_GT(count, 0u) << signal.getName() << " no samples have been read";
+        EXPECT_GT(count, 0u) << signal.getGlobalId() << " no samples have been read";
     }
 }
