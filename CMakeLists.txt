@@ -1,8 +1,23 @@
 cmake_minimum_required(VERSION 3.25)
-set(REPO_NAME example_device_module)
-set(REPO_OPTION_PREFIX EXAMPLE_MODULE)
+project(SimpleDeviceModule VERSION 1.0.0)
 
-project(${REPO_NAME} VERSION 1.0.0)
+set(SIMPLE_DEVICE_MODULE_OPENDAQ_SDK_VER "" CACHE STRING "Version of openDAQ SDK to build SimpleDeviceModule with")
+
+set(REPO_OPTION_PREFIX EXAMPLE_MODULE)
+set(SDK_TARGET_NAMESPACE daq)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_MESSAGE_CONTEXT_SHOW ON CACHE BOOL "Show CMake message context")
+
+option(EXAMPLE_MODULE_ENABLE_TESTS "Enable building tests for example_module" ON)
+option(SIMPLE_DEVICE_MODULE_ENABLE_SERVER_APP "Enable building example server application" OFF)
+if(SIMPLE_DEVICE_MODULE_ENABLE_SERVER_APP)
+    set(DAQMODULES_OPENDAQ_SERVER_MODULE ON CACHE BOOL "" FORCE)
+    set(OPENDAQ_ENABLE_NATIVE_STREAMING ON CACHE BOOL "" FORCE)
+endif()
+
+list(APPEND CMAKE_MESSAGE_CONTEXT ${PROJECT_NAME})
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 if (POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
@@ -12,29 +27,21 @@ if (POLICY CMP0077)
     cmake_policy(SET CMP0077 NEW)
 endif()
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-list(APPEND CMAKE_MESSAGE_CONTEXT ${REPO_NAME})
-set(CMAKE_MESSAGE_CONTEXT_SHOW ON CACHE BOOL "Show CMake message context")
-
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-
 add_definitions(-DFMT_HEADER_ONLY)
-
-option(OPENDAQ_DEVICE_EXAMPLE_ENABLE_SERVER_APP "Enable building example server application" OFF)
 
 include(CommonUtils)
 setup_repo(${REPO_OPTION_PREFIX})
 
-if(OPENDAQ_DEVICE_EXAMPLE_ENABLE_SERVER_APP)
-	set(DAQMODULES_OPENDAQ_SERVER_MODULE ON CACHE BOOL "" FORCE)
-	set(OPENDAQ_ENABLE_NATIVE_STREAMING ON CACHE BOOL "" FORCE)
+if (EXAMPLE_MODULE_ENABLE_TESTS)
+    message(STATUS "Unit tests are ENABLED")
+    enable_testing()
 endif()
 
 add_subdirectory(external)
 add_subdirectory(example_module)
 
-if(OPENDAQ_DEVICE_EXAMPLE_ENABLE_SERVER_APP)
-	message(STATUS "Enbled example server application")
+if(SIMPLE_DEVICE_MODULE_ENABLE_SERVER_APP)
+    message(STATUS "Enbled example server application")
     add_subdirectory(server_application)
 endif()
 

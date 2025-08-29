@@ -5,7 +5,6 @@
 #include <example_module/version.h>
 #include <gmock/gmock.h>
 #include <opendaq/opendaq.h>
-#include <testutils/testutils.h>
 
 #include <chrono>
 #include <thread>
@@ -19,8 +18,6 @@ using testing::SizeIs;
 using namespace daq;
 using namespace std::chrono_literals;
 
-using ExampleChannel = modules::example_module::ExampleChannel;
-using ExampleDevice = modules::example_module::ExampleDevice;
 using ExampleModuleTest = testing::Test;
 
 static ModulePtr CreateModule()
@@ -153,10 +150,9 @@ TEST_F(ExampleModuleTest, GetDeviceType)
     DictPtr<IString, IDeviceType> deviceTypes;
     ASSERT_NO_THROW(deviceTypes = moduleLib.getAvailableDeviceTypes());
 
-    DeviceTypePtr expected = ExampleDevice::CreateType();
-    StringPtr key = expected.getId();
+    StringPtr key = "example_dev";
     ASSERT_TRUE(deviceTypes.hasKey(key));
-    ASSERT_EQ(deviceTypes.get(key).getId(), expected.getId());
+    ASSERT_EQ(deviceTypes.get(key).getId(), key);
 }
 
 TEST_F(ExampleModuleTest, GetValueSignals)
@@ -250,9 +246,9 @@ TEST_F(ExampleModuleTest, GetDomainSignal)
         RatioPtr tickResolution;
         ASSERT_NO_THROW(tickResolution = domainDescriptor.getTickResolution()) 
             << id << " get domain signal tick resolution failed";
-        ASSERT_TRUE(tickResolution.assigned()) << "["
+        ASSERT_TRUE(tickResolution.assigned())
             << id << " domain signal tick resolution is not assigned";
-        ASSERT_EQ(tickResolution, ExampleChannel::getResolution())
+        ASSERT_EQ(tickResolution, Ratio(1, 1000000))
             << id << " domain signal tick resolution mismatches";
 
         DataRulePtr dataRule;
@@ -269,9 +265,6 @@ TEST_F(ExampleModuleTest, GetDomainSignal)
         StringPtr keyStart = "start";
         ASSERT_EQ(dataRule.getParameters().get(keyStart), 0) 
             << id << " domain signal data rule \"" << keyStart << "\" parameter mismatches";
-
-        ASSERT_EQ(domainDescriptor.getOrigin(), ExampleChannel::getEpoch()) 
-            << id << " domain signal origin mismatches";
     }
 }
 

@@ -1,0 +1,50 @@
+name: Download openDAQ framework package
+description: "Download a package from S3 for Linux or Windows"
+
+inputs:
+  src-opendaq-framework-dev:
+    required: true
+    description: "S3 path to the package"
+  dst-opendaq-framework-dev:
+    required: false
+    default: ${{ runner.temp }}
+    description: "Destination path for downloaded package"
+
+  aws_access_key_id:
+    required: true
+    description: "AWS Access Key ID"
+  aws_secret_access_key:
+    required: true
+    description: "AWS Secret Access Key"
+  aws_region:
+    required: true
+    description: "AWS Region"
+
+runs:
+  using: composite
+  steps:
+    - name: Configure AWS
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ inputs.aws_access_key_id }}
+        aws-secret-access-key: ${{ inputs.aws_secret_access_key }}
+        aws-region: ${{ inputs.aws_region }}
+
+    - name: Download package from S3 (Linux/macOS)
+      if: runner.os != 'Windows'
+      shell: bash
+      run: |
+        set -e
+        DST="${{ inputs.dst-opendaq-framework-dev }}"
+        SRC="${{ inputs.src-opendaq-framework-dev }}"
+        echo "Downloading $SRC to $DST"
+        aws s3 cp "$SRC" "$DST"
+
+    - name: Download package from S3 (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $dst = "${{ inputs.dst-opendaq-framework-dev }}"
+        $src = "${{ inputs.src-opendaq-framework-dev }}"
+        Write-Host "Downloading $src to $dst"
+        aws s3 cp "$src" "$dst"

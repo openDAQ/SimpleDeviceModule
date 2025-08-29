@@ -1,5 +1,6 @@
 set(LIB_NAME example_module)
 set(MODULE_HEADERS_DIR ../include/${TARGET_FOLDER_NAME})
+list(APPEND CMAKE_MESSAGE_CONTEXT ${LIB_NAME})
 
 set(SRC_Include common.h
                 module_dll.h
@@ -37,6 +38,7 @@ if (MSVC)
     target_compile_options(${LIB_NAME} PRIVATE /bigobj)
 endif()
 
+find_package(openDAQ ${SIMPLE_DEVICE_MODULE_OPENDAQ_SDK_VER} REQUIRED)
 target_link_libraries(${LIB_NAME} PUBLIC daq::opendaq
 )
 
