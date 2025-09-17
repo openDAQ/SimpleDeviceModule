@@ -1,0 +1,29 @@
+name: Build and test simple device module
+description: Configure, build and test simple device module with CMake
+
+runs:
+  using: composite
+  steps:
+    - name: Set CMake generator
+      shell: bash
+      run: |
+        if [[ "${{ runner.os }}" == "Windows" ]]; then
+          echo "CMAKE_GENERATOR=Visual Studio 17 2022" >> $GITHUB_ENV
+        else
+          echo "CMAKE_GENERATOR=Ninja" >> $GITHUB_ENV
+        fi
+
+    - name: Configure simple device module with CMake
+      shell: bash
+      run: |
+        cmake -B build/output -S . -G "$CMAKE_GENERATOR" -DEXAMPLE_MODULE_ENABLE_TESTS=ON -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build simple device module with CMake
+      shell: bash
+      run: |
+        cmake --build build/output --config Release
+
+    - name: Run simple device module tests with CMake
+      shell: bash
+      run: |
+        ctest --test-dir build/output --output-on-failure -C Release -V

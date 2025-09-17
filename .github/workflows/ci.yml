@@ -2,74 +2,59 @@ name: Build and Test simple device module with latest openDAQ release
 
 on:
   push:
-    branches:
-      - main
-
+    branches: [main]
   pull_request:
-    branches:
-      - main
-      - jira/*
-
-  workflow_dispatch:
-    inputs:
-
-      branch:
-        required: false
-        default: "main"
-
-      opendaq-framework-version:
-        required: false
-        type: string
-        default: latest
 
 env:
   GH_TOKEN: ${{ github.token }}
 
 jobs:
-  build-and-test:
+  test-asset:
+    permissions:
+      contents: read
+      actions: read
+
+    env:
+      GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
     
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
-            generator: Ninja
-
+            platform-alias: "ubuntu20.04-x86_64"
           - os: windows-latest
-            generator: "Visual Studio 17 2022"
+            platform-alias: "win64"
 
     runs-on: ${{ matrix.os }}
-    
+
     steps:
       - name: Checkout simple device module repo
         uses: actions/checkout@v4
+
+      - name: Download openDAQ framework asset
+        id: download-framework-filename
+        uses: openDAQ/actions/framework-download-release@jira/TBBAS-2680-opendaq-gh-actions-github-api-wrapper-unit-tests
         with:
-          ref: ${{ github.event.inputs.branch || github.event.client_payload.branch || github.ref }}
+          platform: ${{ matrix.platform-alias }}
+          github-token: ${{ secrets.PAT_TOKEN }}
 
-      - name: Determine openDAQ framework package
-        id: opendaq-framework
-        uses: ./.github/actions/framework-latest-release
+      - name: Normalize downloaded asset path
+        id: normalize-framework-filename
+        shell: bash
+        run: |
+          asset=${{ steps.download-framework-filename.outputs.asset }}
+          # Normalize output-dir path for cross-platform compatibility
+          if command -v cygpath >/dev/null 2>&1; then
+              asset="$(cygpath -w "$asset")"
+              echo "Normalized path (Windows): $asset"
+          fi
+          echo "asset=$asset" >> $GITHUB_OUTPUT
+
+      - name: Install openDAQ framework asset
+        uses: openDAQ/actions/framework-install@jira/TBBAS-2680-opendaq-gh-actions-github-api-wrapper-unit-tests
         with:
-          opendaq-framework-release-version: ${{ github.event.inputs.opendaq-framework-version || 'latest' }}
+          framework-filename: ${{ steps.normalize-framework-filename.outputs.asset }}
 
-      - name: Download openDAQ framework
-        uses: ./.github/actions/framework-download
-        with:
-          src-opendaq-framework-dev: ${{ steps.opendaq-framework.outputs.uri }}
-          dst-opendaq-framework-dev: ${{ runner.temp }}/${{ steps.opendaq-framework.outputs.artefact }}
-          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws_region: ${{ secrets.AWS_REGION }}
-
-      - name: Install openDAQ framework package
-        uses: ./.github/actions/framework-install
-        with:
-          opendaq-framework-package-filename: ${{ steps.opendaq-framework.outputs.artefact }}
-
-      - name: Configure simple device module with CMake
-        run: cmake -B build/output -S . -G "${{ matrix.generator }}" -DEXAMPLE_MODULE_ENABLE_TESTS=ON -DCMAKE_BUILD_TYPE=Release
-
-      - name: Build simple device module with CMake
-        run: cmake --build build/output --config Release
-
-      - name: Run simple device module tests with CMake
-        run: ctest --test-dir build/output --output-on-failure -C Release -V
+      - name: Build and test simple device module
+        uses: ./.github/actions/module-build-test
