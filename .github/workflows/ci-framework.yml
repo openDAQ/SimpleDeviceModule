@@ -1,0 +1,82 @@
+name: Build simple device module with openDAQ framework and run tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: "Runner label"
+        required: true
+        type: string
+
+      branch:
+        description: "Branch to checkout"
+        required: false
+        type: string
+        default: ""
+
+      artifact-run-id:
+        required: true
+        type: string
+
+      artifact-name:
+        required: true
+        type: string
+
+      file-name:
+        required: true
+        type: string
+
+  workflow_call:
+    inputs:
+      runner:
+        description: "Runner label"
+        required: true
+        type: string
+
+      branch:
+        description: "Branch to checkout"
+        required: false
+        type: string
+        default: ""
+
+      artifact-run-id:
+        required: true
+        type: string
+
+      artifact-name:
+        required: true
+        type: string
+
+      file-name:
+        required: true
+        type: string
+
+env:
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  test-artifact:
+    runs-on: ${{ inputs.runner }}
+
+    steps:
+      - name: Checkout openDAQ module repository
+        uses: actions/checkout@v4
+        with:
+          repository: openDAQ/SimpleDeviceModule
+          ref: ${{ inputs.branch }}
+
+      - name: Download openDAQ framework artifact
+        id: download
+        uses: openDAQ/actions/framework-download-artifact@jira/TBBAS-2680-opendaq-gh-actions-github-api-wrapper-unit-tests
+        with:
+          run-id: ${{ inputs.artifact-run-id }}
+          artifact-name: ${{ inputs.artifact-name  }}
+          artifact-filename: ${{ inputs.file-name  }}
+
+      - name: Install openDAQ framework artifact
+        uses: openDAQ/actions/framework-install@jira/TBBAS-2680-opendaq-gh-actions-github-api-wrapper-unit-tests
+        with:
+          framework-filename: ${{ steps.download.outputs.artifact }}
+
+      - name: Build and test simple device module
+        uses: ./.github/actions/module-build-test
