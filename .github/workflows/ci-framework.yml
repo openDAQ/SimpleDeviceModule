@@ -67,16 +67,18 @@ jobs:
 
       - name: Download openDAQ framework artifact
         id: download
-        uses: openDAQ/actions/framework-download-artifact@jira/TBBAS-2680-opendaq-gh-actions-github-api-wrapper-unit-tests
+        uses: actions/download-artifact@v5
         with:
+          repository: openDAQ/openDAQ
+          github-token: ${{ github.token }}
           run-id: ${{ inputs.artifact-run-id }}
-          artifact-name: ${{ inputs.artifact-name  }}
-          artifact-filename: ${{ inputs.file-name  }}
+          name: ${{ inputs.artifact-name }}
+          path: ${{ runner.temp }}/artifacts
 
       - name: Install openDAQ framework artifact
         uses: openDAQ/actions/framework-install@jira/TBBAS-2680-opendaq-gh-actions-github-api-wrapper-unit-tests
         with:
-          framework-filename: ${{ steps.download.outputs.artifact }}
+          framework-filename: ${{ steps.download.outputs.download-path }}/${{ inputs.file-name }}
 
       - name: Build and test simple device module
         uses: ./.github/actions/module-build-test
