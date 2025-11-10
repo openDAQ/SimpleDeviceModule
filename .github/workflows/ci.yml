@@ -22,7 +22,7 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            platform-alias: "ubuntu20.04-x86_64"
+            platform-alias: "ubuntu22.04-x86_64"
           - os: windows-latest
             platform-alias: "win64"
 
@@ -32,29 +32,24 @@ jobs:
       - name: Checkout simple device module repo
         uses: actions/checkout@v4
 
-      - name: Download openDAQ framework asset
-        id: download-framework-filename
-        uses: openDAQ/actions/framework-download-release@jira/TBBAS-2680-opendaq-gh-actions-github-api-wrapper-unit-tests
+      - name: Compose openDAQ framework filename
+        id: compose-filename
+        uses: openDAQ/actions/framework-compose-filename@jira/TBBAS-2680-opendaq-gh-actions-github-api-wrapper-unit-tests
         with:
           platform: ${{ matrix.platform-alias }}
-          github-token: ${{ secrets.PAT_TOKEN }}
 
-      - name: Normalize downloaded asset path
-        id: normalize-framework-filename
-        shell: bash
-        run: |
-          asset=${{ steps.download-framework-filename.outputs.asset }}
-          # Normalize output-dir path for cross-platform compatibility
-          if command -v cygpath >/dev/null 2>&1; then
-              asset="$(cygpath -w "$asset")"
-              echo "Normalized path (Windows): $asset"
-          fi
-          echo "asset=$asset" >> $GITHUB_OUTPUT
+      - name: Download openDAQ framework asset
+        uses: robinraju/release-downloader@v1
+        with:
+          repository: openDAQ/openDAQ
+          latest: true
+          fileName: ${{ steps.compose-filename.outputs.filename }}
+          out-file-path: downloads
 
       - name: Install openDAQ framework asset
         uses: openDAQ/actions/framework-install@jira/TBBAS-2680-opendaq-gh-actions-github-api-wrapper-unit-tests
         with:
-          framework-filename: ${{ steps.normalize-framework-filename.outputs.asset }}
+          framework-filename: ${{ github.workspace }}/downloads/${{ steps.compose-filename.outputs.filename }}
 
       - name: Build and test simple device module
         uses: ./.github/actions/module-build-test
