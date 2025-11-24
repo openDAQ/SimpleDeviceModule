@@ -13,11 +13,17 @@ jobs:
     permissions:
       contents: read
       actions: read
-    
+
     strategy:
       fail-fast: false
       matrix:
-          os: [ubuntu-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            enable-32bit: false
+          - os: windows-latest
+            enable-32bit: false
+          - os: windows-latest
+            enable-32bit: true
 
     runs-on: ${{ matrix.os }}
 
@@ -27,6 +33,10 @@ jobs:
 
       - name: Install openDAQ framework
         uses: openDAQ/actions/install-framework@jira/TBBAS-2871-download-and-install-sdk
+        with:
+          enable-32bit: ${{ matrix.enable-32bit }}
 
       - name: Build and test simple device module
         uses: ./.github/actions/module-build-test
+        with:
+          enable-32bit: ${{ matrix.enable-32bit }}

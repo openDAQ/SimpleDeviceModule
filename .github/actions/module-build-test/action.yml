@@ -1,29 +1,52 @@
 name: Build and test simple device module
 description: Configure, build and test simple device module with CMake
 
+inputs:
+  enable-32bit:
+    description: 'Enable 32-bit build for Windows'
+    required: false
+    default: 'false'
+
 runs:
   using: composite
   steps:
-    - name: Set CMake generator
+    - name: Set CMake generator and architecture
+      id: cmake-config
       shell: bash
       run: |
         if [[ "${{ runner.os }}" == "Windows" ]]; then
-          echo "CMAKE_GENERATOR=Visual Studio 17 2022" >> $GITHUB_ENV
+          echo "cmake-generator=-G \"Visual Studio 17 2022\"" >> $GITHUB_OUTPUT
+          if [[ "${{ inputs.enable-32bit }}" == "true" ]]; then
+            echo "cmake-arch=-A Win32" >> $GITHUB_OUTPUT
+          else
+            echo "cmake-arch=" >> $GITHUB_OUTPUT
+          fi
         else
-          echo "CMAKE_GENERATOR=Ninja" >> $GITHUB_ENV
+          echo "cmake-generator=-G Ninja" >> $GITHUB_OUTPUT
+          echo "cmake-arch=" >> $GITHUB_OUTPUT
         fi
+        echo "cmake-build-dir=build" >> $GITHUB_OUTPUT
+        echo "cmake-config-name=Release" >> $GITHUB_OUTPUT
 
     - name: Configure simple device module with CMake
       shell: bash
       run: |
-        cmake -B build/output -S . -G "$CMAKE_GENERATOR" -DEXAMPLE_MODULE_ENABLE_TESTS=ON -DCMAKE_BUILD_TYPE=Release
+        cmake -B ${{ steps.cmake-config.outputs.cmake-build-dir }} -S . \
+          ${{ steps.cmake-config.outputs.cmake-generator }} \
+          ${{ steps.cmake-config.outputs.cmake-arch }} \
+          -DCMAKE_BUILD_TYPE=${{ steps.cmake-config.outputs.cmake-config-name }} \
+          -DEXAMPLE_MODULE_ENABLE_TESTS=ON
 
     - name: Build simple device module with CMake
       shell: bash
       run: |
-        cmake --build build/output --config Release
+        cmake --build ${{ steps.cmake-config.outputs.cmake-build-dir }} \
+          --config ${{ steps.cmake-config.outputs.cmake-config-name }}
 
     - name: Run simple device module tests with CMake
       shell: bash
       run: |
-        ctest --test-dir build/output --output-on-failure -C Release -V
+        ctest --test-dir ${{ steps.cmake-config.outputs.cmake-build-dir }} \
+          --output-on-failure \
+          -C ${{ steps.cmake-config.outputs.cmake-config-name }} \
+          -V
