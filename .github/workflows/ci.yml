@@ -13,15 +13,11 @@ jobs:
     permissions:
       contents: read
       actions: read
-
-    # env:
-    #   GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
     
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: [ubuntu-latest, windows-latest]
+          os: [ubuntu-latest, windows-latest]
 
     runs-on: ${{ matrix.os }}
 
