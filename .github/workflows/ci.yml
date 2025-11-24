@@ -14,17 +14,14 @@ jobs:
       contents: read
       actions: read
 
-    env:
-      GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+    # env:
+    #   GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
     
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
-            platform-alias: "ubuntu22.04-x86_64"
-          - os: windows-latest
-            platform-alias: "win64"
+          - os: [ubuntu-latest, windows-latest]
 
     runs-on: ${{ matrix.os }}
 
@@ -32,25 +29,6 @@ jobs:
       - name: Checkout simple device module repo
         uses: actions/checkout@v4
 
-      # - name: Compose openDAQ framework filename
-      #   id: compose-filename
-      #   uses: openDAQ/actions/framework-compose-filename@jira/TBBAS-2680-opendaq-gh-actions-github-api-wrapper-unit-tests
-      #   with:
-      #     platform: ${{ matrix.platform-alias }}
-
-      # - name: Download openDAQ framework asset
-      #   uses: robinraju/release-downloader@v1
-      #   with:
-      #     repository: openDAQ/openDAQ
-      #     latest: true
-      #     fileName: ${{ steps.compose-filename.outputs.filename }}
-      #     out-file-path: downloads
-
-      # - name: Install openDAQ framework asset
-      #   uses: openDAQ/actions/framework-install@jira/TBBAS-2680-opendaq-gh-actions-github-api-wrapper-unit-tests
-      #   with:
-      #     framework-filename: ${{ github.workspace }}/downloads/${{ steps.compose-filename.outputs.filename }}
-      
       - name: Install openDAQ framework
         uses: openDAQ/actions/install-framework@jira/TBBAS-2871-download-and-install-sdk
 
